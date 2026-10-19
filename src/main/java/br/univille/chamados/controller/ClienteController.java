@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.sistemas.chamados.dto.ClienteRequest;
-import br.com.sistemas.chamados.dto.ClienteResponse;
-import br.com.sistemas.chamados.service.ClienteService;
+import br.chamados.dto.ClienteRequest;
+import br.chamados.dto.ClienteResponse;
+import br.chamados.service.ClienteService;
 import jakarta.validation.Valid;
 
 @RestController
