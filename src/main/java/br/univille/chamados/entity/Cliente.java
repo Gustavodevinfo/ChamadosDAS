@@ -16,40 +16,49 @@ public class Cliente {
     @Column(nullable = false, unique = true, length = 120)
     private String email;
 
-    @Column( length = 20)
+    @Column(length = 20)
     private String telefone;
 
     public Cliente() {
 
     }
+
     public Cliente(String nome, String email, String Telefone) {
         this.nome = nome;
         this.email = email;
-        this.telefone = Telefone;}
+        this.telefone = Telefone;
+    }
 
-    public Long getId(){
-    return id;
-}
-    public void setId(Long id){
-        id=id;}
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getNome() {
-    return nome;}
+        return nome;
+    }
 
     public void setNome(String nome) {
-    nome = nome;
-}
+        this.nome = nome;
+    }
+
     public String getEmail() {
-    return email;
-}
+        return email;
+    }
+
     public void setEmail(String email) {
-    email = email;
-}
+        this.email = email;
+    }
+
     public String getTelefone() {
-    return telefone;
-}
+        return telefone;
+    }
+
     public void setTelefone(String Telefone) {
-    Telefone = Telefone;
-}
+        this.Telefone = Telefone;
+    }
 
 }
