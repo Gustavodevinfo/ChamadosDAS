@@ -40,6 +40,9 @@ public class CategoriaService {
     @Transactional
     public CategoriaResponse atualizar(Long id, CategoriaRequest dto) {
         Categoria categoria = buscarEntity(id);
+        if (repository.existsByNomeAndIdNot(dto.nome(), id)) {
+            throw new RegraNegocioException("Já existe uma categoria com esse nome.");
+        }
         categoria.setNome(dto.nome());
         categoria.setDescricao(dto.descricao());
         return CategoriaResponse.de(categoria);

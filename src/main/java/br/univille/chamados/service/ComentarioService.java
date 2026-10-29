@@ -33,10 +33,9 @@ public class ComentarioService {
 
     @Transactional(readOnly = true)
     public List<ComentarioResponse> listarPorChamado(Long chamadoId) {
-        // Verifica se o chamado existe antes de listar
         if (!chamadoRepository.existsById(chamadoId)) {
             throw new RecursoNaoEncontradoException("Chamado não encontrado");
         }
-        return repository.findByChamadoId(chamadoId).stream().map(ComentarioResponse::de).toList();
+        return repository.findByChamadoIdOrderByDataAsc(chamadoId).stream().map(ComentarioResponse::de).toList();
     }
 }

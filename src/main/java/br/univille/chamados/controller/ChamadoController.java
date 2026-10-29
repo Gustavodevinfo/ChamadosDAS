@@ -1,11 +1,29 @@
 package br.univille.chamados.controller;
 
 import java.net.URI;
-import java.util.List;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import br.univille.chamados.dto.AlterarStatusRequest;
+import br.univille.chamados.dto.AtribuirTecnicoRequest;
 import br.univille.chamados.dto.ChamadoRequest;
 import br.univille.chamados.dto.ChamadoResponse;
+import br.univille.chamados.dto.PaginaResponse;
+import br.univille.chamados.entity.Prioridade;
+import br.univille.chamados.entity.StatusChamado;
 import br.univille.chamados.service.ChamadoService;
 import jakarta.validation.Valid;
 
@@ -25,8 +43,12 @@ public class ChamadoController {
     }
 
     @GetMapping
-    public List<ChamadoResponse> listar() {
-        return service.listar();
+    public PaginaResponse<ChamadoResponse> listar(
+            @RequestParam(required = false) StatusChamado status,
+            @RequestParam(required = false) Prioridade prioridade,
+            @RequestParam(required = false) Long clienteId,
+            @PageableDefault(size = 10, sort = "dataAbertura", direction = Sort.Direction.DESC) Pageable pageable) {
+        return service.listar(status, prioridade, clienteId, pageable);
     }
 
     @GetMapping("/{id}")
@@ -37,6 +59,16 @@ public class ChamadoController {
     @PutMapping("/{id}")
     public ChamadoResponse atualizar(@PathVariable Long id, @Valid @RequestBody ChamadoRequest dto) {
         return service.atualizar(id, dto);
+    }
+
+    @PatchMapping("/{id}/atribuir")
+    public ChamadoResponse atribuir(@PathVariable Long id, @Valid @RequestBody AtribuirTecnicoRequest dto) {
+        return service.atribuir(id, dto);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ChamadoResponse alterarStatus(@PathVariable Long id, @Valid @RequestBody AlterarStatusRequest dto) {
+        return service.alterarStatus(id, dto);
     }
 
     @DeleteMapping("/{id}")

@@ -40,6 +40,9 @@ public class TecnicoService {
     @Transactional
     public TecnicoResponse atualizar(Long id, TecnicoRequest dto) {
         Tecnico tecnico = buscarEntity(id);
+        if (repository.existsByEmailAndIdNot(dto.email(), id)) {
+            throw new RegraNegocioException("Já existe um técnico com esse e-mail.");
+        }
         tecnico.setNome(dto.nome());
         tecnico.setEmail(dto.email());
         tecnico.setPerfil(dto.perfil());
