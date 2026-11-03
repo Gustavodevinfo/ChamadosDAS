@@ -2,6 +2,8 @@ package br.univille.chamados.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "chamados")
@@ -23,11 +25,13 @@ public class Chamado {
     @Column(name = "data_fechamento")
     private LocalDateTime dataFechamento;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String prioridade; // Agora é String
+    private Prioridade prioridade;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private String status; // Agora é String
+    private StatusChamado status;
 
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
@@ -41,17 +45,20 @@ public class Chamado {
     @JoinColumn(name = "tecnico_id")
     private Tecnico tecnico;
 
+    @OneToMany(mappedBy = "chamado", cascade = CascadeType.REMOVE)
+    private List<Comentario> comentarios = new ArrayList<>();
+
     public Chamado() {
     }
 
-    public Chamado(String titulo, String descricao, String prioridade, Cliente cliente, Categoria categoria) {
+    public Chamado(String titulo, String descricao, Prioridade prioridade, Cliente cliente, Categoria categoria) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.prioridade = prioridade;
         this.cliente = cliente;
         this.categoria = categoria;
         this.dataAbertura = LocalDateTime.now();
-        this.status = "ABERTO"; // Status inicial como String
+        this.status = StatusChamado.ABERTO;
     }
 
     public Long getId() {
@@ -94,19 +101,19 @@ public class Chamado {
         this.dataFechamento = dataFechamento;
     }
 
-    public String getPrioridade() {
+    public Prioridade getPrioridade() {
         return prioridade;
     }
 
-    public void setPrioridade(String prioridade) {
+    public void setPrioridade(Prioridade prioridade) {
         this.prioridade = prioridade;
     }
 
-    public String getStatus() {
+    public StatusChamado getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(StatusChamado status) {
         this.status = status;
     }
 
@@ -132,5 +139,9 @@ public class Chamado {
 
     public void setTecnico(Tecnico tecnico) {
         this.tecnico = tecnico;
+    }
+
+    public List<Comentario> getComentarios() {
+        return comentarios;
     }
 }

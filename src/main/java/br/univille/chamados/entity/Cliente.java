@@ -1,13 +1,18 @@
 package br.univille.chamados.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "clientes")
-
 public class Cliente {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)
@@ -20,21 +25,16 @@ public class Cliente {
     private String telefone;
 
     public Cliente() {
-
     }
 
-    public Cliente(String nome, String email, String Telefone) {
+    public Cliente(String nome, String email, String telefone) {
         this.nome = nome;
         this.email = email;
-        this.telefone = Telefone;
+        this.telefone = telefone;
     }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getNome() {
@@ -57,8 +57,7 @@ public class Cliente {
         return telefone;
     }
 
-    public void setTelefone(String Telefone) {
-        this.Telefone = Telefone;
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
     }
-
 }

@@ -1,7 +1,5 @@
 package br.univille.chamados.controller;
 
-package br.univille.chamados.controller;
-
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;

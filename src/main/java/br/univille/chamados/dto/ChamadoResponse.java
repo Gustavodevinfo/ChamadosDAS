@@ -1,13 +1,17 @@
 package br.univille.chamados.dto;
 
 import java.time.LocalDateTime;
+
 import br.univille.chamados.entity.Chamado;
+import br.univille.chamados.entity.Prioridade;
+import br.univille.chamados.entity.StatusChamado;
 
 public record ChamadoResponse(
         Long id, String titulo, String descricao,
         LocalDateTime dataAbertura, LocalDateTime dataFechamento,
-        String prioridade, String status, // Strings
+        Prioridade prioridade, StatusChamado status,
         String clienteNome, String categoriaNome, String tecnicoNome) {
+
     public static ChamadoResponse de(Chamado c) {
         return new ChamadoResponse(
                 c.getId(), c.getTitulo(), c.getDescricao(),

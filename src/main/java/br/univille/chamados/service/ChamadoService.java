@@ -1,20 +1,27 @@
 package br.univille.chamados.service;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.univille.chamados.dto.AlterarStatusRequest;
+import br.univille.chamados.dto.AtribuirTecnicoRequest;
 import br.univille.chamados.dto.ChamadoRequest;
 import br.univille.chamados.dto.ChamadoResponse;
+import br.univille.chamados.dto.PaginaResponse;
 import br.univille.chamados.entity.Categoria;
 import br.univille.chamados.entity.Chamado;
 import br.univille.chamados.entity.Cliente;
+import br.univille.chamados.entity.Prioridade;
+import br.univille.chamados.entity.StatusChamado;
 import br.univille.chamados.entity.Tecnico;
 import br.univille.chamados.exception.RecursoNaoEncontradoException;
 import br.univille.chamados.exception.RegraNegocioException;
 import br.univille.chamados.repository.CategoriaRepository;
 import br.univille.chamados.repository.ChamadoRepository;
+import br.univille.chamados.repository.ChamadoSpecification;
 import br.univille.chamados.repository.ClienteRepository;
 import br.univille.chamados.repository.TecnicoRepository;
 
@@ -38,21 +45,13 @@ public class ChamadoService {
 
     @Transactional
     public ChamadoResponse criar(ChamadoRequest dto) {
-        Cliente cliente = clienteRepository.findById(dto.clienteId())
-                .orElseThrow(
-                        () -> new RecursoNaoEncontradoException("Cliente não encontrado com o ID: " + dto.clienteId()));
-
-        Categoria categoria = categoriaRepository.findById(dto.categoriaId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException(
-                        "Categoria não encontrada com o ID: " + dto.categoriaId()));
+        Cliente cliente = buscarCliente(dto.clienteId());
+        Categoria categoria = buscarCategoria(dto.categoriaId());
 
         Chamado chamado = new Chamado(dto.titulo(), dto.descricao(), dto.prioridade(), cliente, categoria);
 
         if (dto.tecnicoId() != null) {
-            Tecnico tecnico = tecnicoRepository.findById(dto.tecnicoId())
-                    .orElseThrow(() -> new RecursoNaoEncontradoException(
-                            "Técnico não encontrado com o ID: " + dto.tecnicoId()));
-            chamado.setTecnico(tecnico);
+            chamado.setTecnico(buscarTecnico(dto.tecnicoId()));
         }
 
         Chamado salvo = repository.save(chamado);
@@ -60,8 +59,19 @@ public class ChamadoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChamadoResponse> listar() {
-        return repository.findAll().stream().map(ChamadoResponse::de).toList();
+    public PaginaResponse<ChamadoResponse> listar(StatusChamado status, Prioridade prioridade,
+            Long clienteId, Pageable pageable) {
+        return PaginaResponse.de(
+                repository.findAll(ChamadoSpecification.comFiltros(status, prioridade, clienteId), pageable)
+                        .map(ChamadoResponse::de));
+    }
+
+    @Transactional(readOnly = true)
+    public PaginaResponse<ChamadoResponse> listarPorCliente(Long clienteId, Pageable pageable) {
+        if (!clienteRepository.existsById(clienteId)) {
+            throw new RecursoNaoEncontradoException("Cliente " + clienteId + " não encontrado");
+        }
+        return listar(null, null, clienteId, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -73,44 +83,74 @@ public class ChamadoService {
     public ChamadoResponse atualizar(Long id, ChamadoRequest dto) {
         Chamado chamado = buscarEntity(id);
 
-        if ("FECHADO".equalsIgnoreCase(chamado.getStatus())) {
+        if (chamado.getStatus() == StatusChamado.FECHADO) {
             throw new RegraNegocioException("Não é possível alterar um chamado que já está FECHADO.");
         }
 
         chamado.setTitulo(dto.titulo());
         chamado.setDescricao(dto.descricao());
         chamado.setPrioridade(dto.prioridade());
-
-        Cliente cliente = clienteRepository.findById(dto.clienteId())
-                .orElseThrow(
-                        () -> new RecursoNaoEncontradoException("Cliente não encontrado com o ID: " + dto.clienteId()));
-        chamado.setCliente(cliente);
-
-        Categoria categoria = categoriaRepository.findById(dto.categoriaId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException(
-                        "Categoria não encontrada com o ID: " + dto.categoriaId()));
-        chamado.setCategoria(categoria);
-
-        if (dto.tecnicoId() != null) {
-            Tecnico tecnico = tecnicoRepository.findById(dto.tecnicoId())
-                    .orElseThrow(() -> new RecursoNaoEncontradoException(
-                            "Técnico não encontrado com o ID: " + dto.tecnicoId()));
-            chamado.setTecnico(tecnico);
-        } else {
-            chamado.setTecnico(null);
-        }
+        chamado.setCliente(buscarCliente(dto.clienteId()));
+        chamado.setCategoria(buscarCategoria(dto.categoriaId()));
+        chamado.setTecnico(dto.tecnicoId() != null ? buscarTecnico(dto.tecnicoId()) : null);
 
         return ChamadoResponse.de(chamado);
     }
 
     @Transactional
-    public void excluir(Long id) {
+    public ChamadoResponse atribuir(Long id, AtribuirTecnicoRequest dto) {
         Chamado chamado = buscarEntity(id);
-        repository.delete(chamado);
+
+        if (chamado.getStatus() == StatusChamado.FECHADO) {
+            throw new RegraNegocioException("Não é possível atribuir técnico a um chamado FECHADO.");
+        }
+
+        chamado.setTecnico(buscarTecnico(dto.tecnicoId()));
+        return ChamadoResponse.de(chamado);
+    }
+
+    @Transactional
+    public ChamadoResponse alterarStatus(Long id, AlterarStatusRequest dto) {
+        Chamado chamado = buscarEntity(id);
+        StatusChamado atual = chamado.getStatus();
+        StatusChamado novo = dto.status();
+
+        if (atual == StatusChamado.FECHADO) {
+            throw new RegraNegocioException("Não é possível alterar um chamado que já está FECHADO.");
+        }
+        if (!atual.podeIrPara(novo)) {
+            throw new RegraNegocioException("Transição de status inválida: " + atual + " -> " + novo);
+        }
+
+        chamado.setStatus(novo);
+        if (novo == StatusChamado.FECHADO) {
+            chamado.setDataFechamento(LocalDateTime.now());
+        }
+        return ChamadoResponse.de(chamado);
+    }
+
+    @Transactional
+    public void excluir(Long id) {
+        repository.delete(buscarEntity(id));
     }
 
     private Chamado buscarEntity(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Chamado " + id + " não encontrado"));
+    }
+
+    private Cliente buscarCliente(Long id) {
+        return clienteRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado com o ID: " + id));
+    }
+
+    private Categoria buscarCategoria(Long id) {
+        return categoriaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria não encontrada com o ID: " + id));
+    }
+
+    private Tecnico buscarTecnico(Long id) {
+        return tecnicoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Técnico não encontrado com o ID: " + id));
     }
 }

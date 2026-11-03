@@ -16,13 +16,14 @@ public class Tecnico {
     @Column(nullable = false, unique = true, length = 120)
     private String email;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String perfil; // Agora é String
+    private Perfil perfil;
 
     public Tecnico() {
     }
 
-    public Tecnico(String nome, String email, String perfil) {
+    public Tecnico(String nome, String email, Perfil perfil) {
         this.nome = nome;
         this.email = email;
         this.perfil = perfil;
@@ -52,11 +53,11 @@ public class Tecnico {
         this.email = email;
     }
 
-    public String getPerfil() {
+    public Perfil getPerfil() {
         return perfil;
     }
 
-    public void setPerfil(String perfil) {
+    public void setPerfil(Perfil perfil) {
         this.perfil = perfil;
     }
 }
